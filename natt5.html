@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Serviços</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+   <style>
+        /* Estilo geral */
+body {
+    font-family: 'Poppins', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h3 {
+    font-family: 'Roboto', Arial, sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 20px;
+    color: #333;
+}
+
+/* Sidebar */
+#sidebar {
+    width: 250px;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color: white;
+    padding: 15px;
+    height: 100vh;
+    position: fixed;
+    box-shadow: 4px 0px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px 0 0 10px;
+}
+
+#sidebar a {
+    display: block;
+    color: white;
+    padding: 10px;
+    text-decoration: none;
+    transition: all 0.3s ease-in-out;
+}
+
+#sidebar a:hover {
+    background-color: #34495e;
+    transform: scale(1.05);
+}
+
+/* Conteúdo */
+#content {
+    margin-left: 270px;
+    padding: 20px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Modais */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    padding-top: 100px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #ffffff, #f7f7f7);
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #888;
+    border-radius: 15px;
+    width: 80%;
+    max-height: 80%;
+    overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    color: #333;
+}
+
+.close {
+    color: #ff6b6b;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.close:hover,
+.close:focus {
+    color: #e74c3c;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Botões */
+button {
+    background: linear-gradient(135deg, #3498db, #1d78c1);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+    background: linear-gradient(135deg, #1d78c1, #145e99);
+    transform: translateY(-3px);
+}
+
+/* Tabelas */
+table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9f9f9;
+}
+
+.table-bordered th, .table-bordered td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px;
+}
+
+.table-bordered th {
+    background: linear-gradient(135deg, #f9f9f9, #e0e0e0);
+    color: #333;
+    font-weight: bold;
+}
+
+.table-bordered tbody tr:hover {
+    background-color: #f2f8fc;
+    transition: background-color 0.2s;
+}
+
+/* Resultado do relatório */
+#resultadoRelatorio {
+    margin-top: 30px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-radius: 0;
+    }
+
+    #content {
+        margin-left: 0;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <h2>Nathiele Rodrigues</h2>
+        <a href="#" onclick="showSection('cliente')"><i class="fas fa-user"></i> CLIENTES</a>
+        <a href="#" onclick="showSection('funcionario')"><i class="fas fa-users"></i> FUNCIONÁRIOS</a>
+        <a href="#" onclick="showSection('servico')"><i class="fas fa-briefcase"></i> SERVIÇOS</a>
+        <a href="#" onclick="showSection('agendamento')"><i class="fas fa-calendar-alt"></i> AGENDAMENTOS</a>
+        <a href="#" onclick="showSection('relatorio')"><i class="fas fa-file-alt"></i> RELATÓRIOS</a>
+    </div>
+
+    <!-- Content -->
+    <div id="content">
+        <!-- Seções -->
+        <div id="cliente" class="section hidden">
+            <h2>CADASTRAR CLIENTES</h2>
+            <form id="formCliente">
+                <div class="mb-3">
+                    <label for="nomeCliente" class="form-label">Nome:</label>
+                    <input type="text" class="form-control" id="nomeCliente" required>
+                </div>
+                <div class="mb-3">
+                    <label for="cpfCliente" class="form-label">CPF:</label>
+                    <input type="text" class="form-control" id="cpfCliente" maxlength="14" oninput="mascaraCPF(this)" required>
+                </div>
+                <div class="mb-3">
+                    <label for="whatsappCliente" class="form-label">WhatsApp:</label>
+                    <input type="text" class="form-control" id="whatsappCliente" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="salvarCliente()">Salvar Cliente</button>
+            </form>
+            <hr>
+            <h3>CLIENTES</h3>
+            <input type="text" id="buscarCliente" placeholder="Buscar cliente" onkeyup="filtrarClientes()">
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>CPF</th>
+                        <th>WhatsApp</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaClientes"></tbody>
+            </table>
+        </div>
+
+        <!-- Cadastro de Funcionário -->
+        <div id="funcionario" class="section hidden">
+            <h2>CADASTRAR FUNCIONÁRIOS</h2>
+            <form id="formFuncionario">
+                <div class="mb-3">
+                    <label for="nomeFuncionario" class="form-label">Nome:</label>
+                    <input type="text" class="form-control" id="nomeFuncionario" required>
+                </div>
+                <div class="mb-3">
+                    <label for="cpfFuncionario" class="form-label">CPF:</label>
+                    <input type="text" class="form-control" id="cpfFuncionario" maxlength="14" oninput="mascaraCPF(this)" required>
+                </div>
+                <div class="mb-3">
+                    <label for="whatsappFuncionario" class="form-label">WhatsApp:</label>
+                    <input type="text" class="form-control" id="whatsappFuncionario" required>
+                </div>
+                <div class="mb-3">
+                    <label for="cargoFuncionario" class="form-label">Cargo:</label>
+                    <input type="text" class="form-control" id="cargoFuncionario" required>
+                </div>
+                <div class="mb-3">
+                    <label for="percentualFuncionario" class="form-label">Percentual do Pagamento:</label>
+                    <input type="number" class="form-control" id="percentualFuncionario" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="salvarFuncionario()">Salvar Funcionário</button>
+            </form>
+            <hr>
+            <h2>FUNCIONÁRIOS</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>CPF</th>
+                        <th>WhatsApp</th>
+                        <th>Cargo</th>
+                        <th>Percentual</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaFuncionarios"></tbody>
+            </table>
+        </div>
+
+        <!-- Cadastro de Serviço -->
+        <div id="servico" class="section hidden">
+            <h2>CADASTRAR SERVIÇOS</h2>
+            <form id="formServico">
+                <div class="mb-3">
+                    <label for="nomeServico" class="form-label">Nome do Serviço:</label>
+                    <input type="text" class="form-control" id="nomeServico" required>
+                </div>
+                <div class="mb-3">
+                    <label for="descricaoServico" class="form-label">Descrição:</label>
+                    <input type="text" class="form-control" id="descricaoServico" required>
+                </div>
+                <div class="mb-3">
+                    <label for="valorServico" class="form-label">Valor:</label>
+                    <input type="number" class="form-control" id="valorServico" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="salvarServico()">Salvar Serviço</button>
+            </form>
+            <hr>
+            <h2>SERVIÇOS</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome do Serviço</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaServicos"></tbody>
+            </table>
+        </div>
+
+        <!-- Agendamento de Serviço -->
+        <div id="agendamento" class="section hidden">
+            <h2>AGENDAR SERVIÇOS</h2>
+            <form id="formAgendamento" onsubmit="event.preventDefault(); salvarAgendamento();">
+                <div class="mb-3">
+                    <label for="cpfClienteAgendamento" class="form-label">CPF do Cliente:</label>
+                    <input type="text" class="form-control" id="cpfClienteAgendamento" maxlength="14" oninput="mascaraCPF(this)" required>
+                </div>
+                <div class="mb-3">
+                    <label for="funcionarioAgendamento" class="form-label">Funcionário</label>
+                    <select id="funcionarioAgendamento" class="form-select" required>
+                        <option value="">Selecione um funcionário</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="servicoAgendamento" class="form-label">Serviço</label>
+                    <select id="servicoAgendamento" class="form-select" required>
+                        <option value="">Selecione um serviço</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="dataAgendamento" class="form-label">Data do Agendamento</label>
+                    <input type="date" class="form-control" id="dataAgendamento" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="salvarAgendamento()">Salvar Agendamento</button>
+            </form>
+            <hr>
+            <h2>AGENDAMENTOS</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Funcionário</th>
+                        <th>Serviço</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaAgendamentos"></tbody>
+            </table>
+        </div>
+
+        <!-- Relatórios -->
+<div id="relatorio" class="section hidden">
+    <h2>RELATÓRIO GERAL</h2>
+
+    <!-- Botões de Ação -->
+    <button class="btn btn-primary" onclick="gerarRelatorio()">Gerar Relatório</button>
+    <button class="btn btn-success" onclick="exportarExcel()">Exportar para Excel</button>
+    <button class="btn btn-danger" onclick="exportarPDF()">Exportar para PDF</button>
+
+    <!-- Pesquisa Avançada -->
+    <div class="mb-3">
+        <input type="text" id="buscarRelatorio" class="form-control" placeholder="Pesquisar no relatório" onkeyup="filtrarRelatorio()">
+    </div>
+
+    <!-- Filtros -->
+    <div class="row">
+        <div class="col-md-3">
+            <select class="form-select" id="filtroFuncionario" onchange="filtrarRelatorio()">
+                <option value="">Filtrar por Funcionário</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="filtroServico" onchange="filtrarRelatorio()">
+                <option value="">Filtrar por Serviço</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" class="form-control" id="filtroDataInicio" onchange="filtrarRelatorio()">
+        </div>
+        <div class="col-md-3">
+            <input type="date" class="form-control" id="filtroDataFim" onchange="filtrarRelatorio()">
+        </div>
+    </div>
+    <hr>
+
+    <!-- Tabela de Relatórios -->
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Funcionário</th>
+                <th>Serviço</th>
+                <th>Data</th>
+                <th>Valor</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaRelatorios"></tbody>
+    </table>
+
+    <!-- Paginação -->
+    <nav aria-label="Navegação da tabela de relatórios">
+        <ul class="pagination justify-content-center" id="paginacaoRelatorio">
+            <!-- Páginas dinâmicas -->
+        </ul>
+    </nav>
+
+    <hr>
+
+    <!-- Gráficos -->
+    <canvas id="relatorioFuncionariosGrafico" width="400" height="200"></canvas>
+    <canvas id="relatorioServicosGrafico" width="400" height="200"></canvas>
+
+    <!-- Botões de Relatório Quinzenal e Mensal -->
+<!-- Formulário de seleção de datas e botão -->
+  <label>Data Início:</label>
+<input type="date" id="dataInicio">
+<label>Data Fim:</label>
+<input type="date" id="dataFim">
+<button onclick="gerarRelatorio()">FECHAMENTO DE CAIXA</button>
+
+<div id="resultadoRelatorio"></div>
+
+    <hr>
+    <div id="resultadoRelatorio"></div>
+</div>
+
+<!-- Modal para exibir o relatório em detalhes -->
+<div id="modalRelatorio" class="modal hidden">
+    <div class="modal-content">
+        <span class="close" onclick="fecharJanelaRelatorio()">&times;</span>
+        <h2>Relatório</h2>
+        <table id="tabelaRelatorio" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Funcionário</th>
+                    <th>Serviço</th>
+                    <th>Data</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaAgendamentosRelatorio">
+                <!-- Dados de agendamentos dinamicamente adicionados -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+    <!-- Scripts -->
+    <script>
+       // Variáveis Globais
+let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+let funcionarios = JSON.parse(localStorage.getItem('funcionarios')) || [];
+let servicos = JSON.parse(localStorage.getItem('servicos')) || [];
+let agendamentos = JSON.parse(localStorage.getItem('agendamentos')) || [];
+
+// Função para exibir seções
+function showSection(sectionId) {
+    const sections = document.querySelectorAll('.section');
+    sections.forEach(section => {
+        section.classList.add('hidden');
+    });
+    document.getElementById(sectionId).classList.remove('hidden');
+    if (sectionId === 'agendamento') {
+        carregarSelectsAgendamento();
+    }
+    if (sectionId === 'relatorio') {
+        carregarFiltrosRelatorio();
+    }
+    // Chamar as funções de listagem
+    if (sectionId === 'cliente') listarClientes();
+    if (sectionId === 'funcionario') listarFuncionarios();
+    if (sectionId === 'servico') listarServicos();
+    if (sectionId === 'agendamento') listarAgendamentos();
+}
+
+// Máscara CPF
+function mascaraCPF(input) {
+    input.value = input.value.replace(/\D/g, '')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+}
+
+// ------------------ Cadastro de Cliente ------------------
+
+function salvarCliente() {
+    const nome = document.getElementById('nomeCliente').value;
+    const cpf = document.getElementById('cpfCliente').value;
+    const whatsapp = document.getElementById('whatsappCliente').value;
+
+    if (nome && cpf && whatsapp) {
+        const cliente = { nome, cpf, whatsapp };
+        clientes.push(cliente);
+        localStorage.setItem('clientes', JSON.stringify(clientes));
+        listarClientes();
+        document.getElementById('formCliente').reset();
+        alert('Cliente cadastrado com sucesso!');
+    } else {
+        alert('Preencha todos os campos!');
+    }
+}
+
+function listarClientes() {
+    const tabelaClientes = document.getElementById('tabelaClientes');
+    tabelaClientes.innerHTML = '';
+    clientes.forEach((cliente, index) => {
+        tabelaClientes.innerHTML += `
+            <tr>
+                <td>${cliente.nome}</td>
+                <td>${cliente.cpf}</td>
+                <td>${cliente.whatsapp}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editarCliente(${index})">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletarCliente(${index})">Deletar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function deletarCliente(index) {
+    if (confirm('Deseja realmente deletar este cliente?')) {
+        clientes.splice(index, 1);
+        localStorage.setItem('clientes', JSON.stringify(clientes));
+        listarClientes();
+    }
+}
+
+function editarCliente(index) {
+    const cliente = clientes[index];
+    document.getElementById('nomeCliente').value = cliente.nome;
+    document.getElementById('cpfCliente').value = cliente.cpf;
+    document.getElementById('whatsappCliente').value = cliente.whatsapp;
+    clientes.splice(index, 1);
+    localStorage.setItem('clientes', JSON.stringify(clientes));
+    listarClientes();
+}
+
+// Filtro de Clientes
+function filtrarClientes() {
+    const busca = document.getElementById('buscarCliente').value.toLowerCase();
+    const tabelaClientes = document.getElementById('tabelaClientes');
+    tabelaClientes.innerHTML = '';
+    clientes.filter(cliente => cliente.nome.toLowerCase().includes(busca)).forEach((cliente, index) => {
+        tabelaClientes.innerHTML += `
+            <tr>
+                <td>${cliente.nome}</td>
+                <td>${cliente.cpf}</td>
+                <td>${cliente.whatsapp}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editarCliente(${index})">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletarCliente(${index})">Deletar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// ------------------ Cadastro de Funcionário ------------------
+
+function salvarFuncionario() {
+    const nome = document.getElementById('nomeFuncionario').value;
+    const cpf = document.getElementById('cpfFuncionario').value;
+    const whatsapp = document.getElementById('whatsappFuncionario').value;
+    const cargo = document.getElementById('cargoFuncionario').value;
+    const percentual = parseFloat(document.getElementById('percentualFuncionario').value);
+
+    if (nome && cpf && whatsapp && cargo && percentual) {
+        const funcionario = { nome, cpf, whatsapp, cargo, percentual };
+        funcionarios.push(funcionario);
+        localStorage.setItem('funcionarios', JSON.stringify(funcionarios));
+        listarFuncionarios();
+        document.getElementById('formFuncionario').reset();
+        alert('Funcionário cadastrado com sucesso!');
+    } else {
+        alert('Preencha todos os campos!');
+    }
+}
+
+function listarFuncionarios() {
+    const tabelaFuncionarios = document.getElementById('tabelaFuncionarios');
+    tabelaFuncionarios.innerHTML = '';
+    funcionarios.forEach((funcionario, index) => {
+        tabelaFuncionarios.innerHTML += `
+            <tr>
+                <td>${funcionario.nome}</td>
+                <td>${funcionario.cpf}</td>
+                <td>${funcionario.whatsapp}</td>
+                <td>${funcionario.cargo}</td>
+                <td>${funcionario.percentual}%</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editarFuncionario(${index})">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletarFuncionario(${index})">Deletar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function deletarFuncionario(index) {
+    if (confirm('Deseja realmente deletar este funcionário?')) {
+        funcionarios.splice(index, 1);
+        localStorage.setItem('funcionarios', JSON.stringify(funcionarios));
+        listarFuncionarios();
+    }
+}
+
+function editarFuncionario(index) {
+    const funcionario = funcionarios[index];
+    document.getElementById('nomeFuncionario').value = funcionario.nome;
+    document.getElementById('cpfFuncionario').value = funcionario.cpf;
+    document.getElementById('whatsappFuncionario').value = funcionario.whatsapp;
+    document.getElementById('cargoFuncionario').value = funcionario.cargo;
+    document.getElementById('percentualFuncionario').value = funcionario.percentual;
+    funcionarios.splice(index, 1);
+    localStorage.setItem('funcionarios', JSON.stringify(funcionarios));
+    listarFuncionarios();
+}
+
+// ------------------ Cadastro de Serviço ------------------
+
+
+function salvarServico() {
+    const nome = document.getElementById("nomeServico").value;
+    const descricao = document.getElementById("descricaoServico").value;
+    const valor = parseFloat(document.getElementById("valorServico").value);  // Parse valor as a float
+
+    if (!isNaN(valor)) {
+        const servico = { nome, descricao, valor };
+        let servicos = JSON.parse(localStorage.getItem("servicos")) || [];
+        servicos.push(servico);
+        localStorage.setItem("servicos", JSON.stringify(servicos));
+        listarServicos(); // Refresh the service list after saving
+    } else {
+        alert("Please enter a valid number for the service value.");
+    }
+}
+
+function listarServicos() {
+    const tabelaServicos = document.getElementById('tabelaServicos');
+    tabelaServicos.innerHTML = '';  // Clear the table
+
+    let servicos = JSON.parse(localStorage.getItem("servicos")) || []; // Retrieve servicos from localStorage
+
+    servicos.forEach((servico, index) => {
+        tabelaServicos.innerHTML += `
+            <tr>
+                <td>${servico.nome}</td>
+                <td>${servico.descricao}</td>
+                <td>${servico.valor}</td> <!-- Ensure valor is formatted correctly -->
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editarServico(${index})">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="deletarServico(${index})">Deletar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function deletarServico(index) {
+    let servicos = JSON.parse(localStorage.getItem('servicos')) || []; // Retrieve servicos from localStorage
+    if (confirm('Deseja realmente deletar este serviço?')) {
+        servicos.splice(index, 1); // Remove the selected service
+        localStorage.setItem('servicos', JSON.stringify(servicos)); // Update localStorage
+        listarServicos(); // Refresh the service list
+    }
+}
+
+function editarServico(index) {
+    let servicos = JSON.parse(localStorage.getItem('servicos')) || []; // Retrieve servicos from localStorage
+    const servico = servicos[index];
+    
+    // Populate form fields with the selected service details
+    document.getElementById('nomeServico').value = servico.nome;
+    document.getElementById('descricaoServico').value = servico.descricao;
+    document.getElementById('valorServico').value = servico.valor;
+
+    // Remove the service being edited from the list and update localStorage
+    servicos.splice(index, 1);
+    localStorage.setItem('servicos', JSON.stringify(servicos));
+    listarServicos(); // Refresh the service list
+}
+
+
+// ------------------ Agendamento de Serviço ------------------
+
+function carregarSelectsAgendamento() {
+    const selectFuncionarios = document.getElementById('funcionarioAgendamento');
+    const selectServicos = document.getElementById('servicoAgendamento');
+
+    // Limpar opções atuais
+    selectFuncionarios.innerHTML = '<option value="">Selecione um funcionário</option>';
+    selectServicos.innerHTML = '<option value="">Selecione um serviço</option>';
+
+    // Carregar funcionários
+    funcionarios.forEach(funcionario => {
+        const option = document.createElement('option');
+        option.value = funcionario.cpf;
+        option.textContent = funcionario.nome;
+        selectFuncionarios.appendChild(option);
+    });
+
+    // Carregar serviços
+    servicos.forEach(servico => {
+        const option = document.createElement('option');
+        option.value = servico.nome;
+        option.textContent = servico.nome;
+        selectServicos.appendChild(option);
+    });
+}
+
+function salvarAgendamento() {
+    const cpfCliente = document.getElementById('cpfClienteAgendamento').value;
+    const funcionarioCPF = document.getElementById('funcionarioAgendamento').value;
+    const servicoNome = document.getElementById('servicoAgendamento').value;
+    const data = document.getElementById('dataAgendamento').value;
+
+    if (cpfCliente && funcionarioCPF && servicoNome && data) {
+        const cliente = clientes.find(c => c.cpf === cpfCliente);
+        const funcionario = funcionarios.find(f => f.cpf === funcionarioCPF);
+        const servico = servicos.find(s => s.nome === servicoNome);
+
+        if (!cliente) {
+            alert('Cliente não encontrado!');
+            return;
+        }
+        if (!funcionario) {
+            alert('Funcionário não encontrado!');
+            return;
+        }
+        if (!servico) {
+            alert('Serviço não encontrado!');
+            return;
+        }
+
+        const agendamento = {
+            clienteCPF: cliente.cpf,
+            clienteNome: cliente.nome,
+            funcionarioCPF: funcionario.cpf,
+            funcionarioNome: funcionario.nome,
+            servicoNome: servico.nome,
+            servicoValor: servico.valor,
+            data
+        };
+
+        agendamentos.push(agendamento);
+        localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
+        listarAgendamentos();
+        document.getElementById('formAgendamento').reset();
+        alert('Agendamento salvo com sucesso!');
+    } else {
+        alert('Preencha todos os campos!');
+    }
+}
+
+function listarAgendamentos() {
+    const tabelaAgendamentos = document.getElementById('tabelaAgendamentos');
+    tabelaAgendamentos.innerHTML = '';
+    agendamentos.forEach((agendamento, index) => {
+        tabelaAgendamentos.innerHTML += `
+            <tr>
+                <td>${agendamento.clienteNome}</td>
+                <td>${agendamento.funcionarioNome}</td>
+                <td>${agendamento.servicoNome}</td>
+                <td>${agendamento.data}</td>
+                <td>${agendamento.servicoValor}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deletarAgendamento(${index})">Deletar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function deletarAgendamento(index) {
+    if (confirm('Deseja realmente deletar este agendamento?')) {
+        agendamentos.splice(index, 1);
+        localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
+        listarAgendamentos();
+    }
+}
+
+// ------------------ Relatórios ------------------
+
+function carregarFiltrosRelatorio() {
+    const filtroFuncionario = document.getElementById('filtroFuncionario');
+    const filtroServico = document.getElementById('filtroServico');
+
+    // Limpar opções atuais
+    filtroFuncionario.innerHTML = '<option value="">Filtrar por Funcionário</option>';
+    filtroServico.innerHTML = '<option value="">Filtrar por Serviço</option>';
+
+    // Carregar funcionários
+    funcionarios.forEach(funcionario => {
+        const option = document.createElement('option');
+        option.value = funcionario.cpf;
+        option.textContent = funcionario.nome;
+        filtroFuncionario.appendChild(option);
+    });
+
+    // Carregar serviços
+    servicos.forEach(servico => {
+        const option = document.createElement('option');
+        option.value = servico.nome;
+        option.textContent = servico.nome;
+        filtroServico.appendChild(option);
+    });
+}
+
+function gerarRelatorio() {
+    listarRelatorios(1); // Iniciar na página 1
+}
+
+let agendamentosFiltrados = [];
+let itensPorPagina = 5;
+let paginaAtual = 1;
+
+function listarRelatorios(pagina) {
+    const tabelaRelatorios = document.getElementById('tabelaRelatorios');
+    const buscarRelatorio = document.getElementById('buscarRelatorio').value.toLowerCase();
+    const filtroFuncionario = document.getElementById('filtroFuncionario').value;
+    const filtroServico = document.getElementById('filtroServico').value;
+    const filtroDataInicio = document.getElementById('filtroDataInicio').value;
+    const filtroDataFim = document.getElementById('filtroDataFim').value;
+
+    agendamentosFiltrados = agendamentos.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data);
+        const dataInicio = filtroDataInicio ? new Date(filtroDataInicio) : null;
+        const dataFim = filtroDataFim ? new Date(filtroDataFim) : null;
+
+        return (
+            (!buscarRelatorio || agendamento.clienteNome.toLowerCase().includes(buscarRelatorio) ||
+                agendamento.funcionarioNome.toLowerCase().includes(buscarRelatorio) ||
+                agendamento.servicoNome.toLowerCase().includes(buscarRelatorio)) &&
+            (!filtroFuncionario || agendamento.funcionarioCPF === filtroFuncionario) &&
+            (!filtroServico || agendamento.servicoNome === filtroServico) &&
+            (!dataInicio || dataAgendamento >= dataInicio) &&
+            (!dataFim || dataAgendamento <= dataFim)
+        );
+    });
+
+    // Paginação
+    const totalPaginas = Math.ceil(agendamentosFiltrados.length / itensPorPagina);
+    paginaAtual = pagina;
+    const inicio = (pagina - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const agendamentosPagina = agendamentosFiltrados.slice(inicio, fim);
+
+    tabelaRelatorios.innerHTML = '';
+    agendamentosPagina.forEach(agendamento => {
+        tabelaRelatorios.innerHTML += `
+            <tr>
+                <td>${agendamento.funcionarioNome}</td>
+                <td>${agendamento.servicoNome}</td>
+                <td>${agendamento.data}</td>
+                <td>${agendamento.servicoValor.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-info btn-sm" onclick="detalharAgendamento('${agendamento.clienteCPF}')">Detalhes</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    // Atualizar Paginação
+    atualizarPaginacao(totalPaginas);
+}
+
+function atualizarPaginacao(totalPaginas) {
+    const paginacao = document.getElementById('paginacaoRelatorio');
+    paginacao.innerHTML = '';
+
+    for (let i = 1; i <= totalPaginas; i++) {
+        paginacao.innerHTML += `
+            <li class="page-item ${i === paginaAtual ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="listarRelatorios(${i})">${i}</a>
+            </li>
+        `;
+    }
+}
+
+function filtrarRelatorio() {
+    listarRelatorios(1);
+}
+
+function detalharAgendamento(cpfCliente) {
+    const cliente = clientes.find(c => c.cpf === cpfCliente);
+    if (cliente) {
+        alert(`Cliente: ${cliente.nome}\nCPF: ${cliente.cpf}\nWhatsApp: ${cliente.whatsapp}`);
+    } else {
+        alert('Cliente não encontrado!');
+    }
+}
+
+function exportarExcel() {
+    // Converter tabela em worksheet
+    const ws = XLSX.utils.json_to_sheet(agendamentosFiltrados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Relatório');
+
+    // Exportar workbook
+    XLSX.writeFile(wb, 'relatorio.xlsx');
+}
+
+function exportarPDF() {
+    // Usando jsPDF para gerar PDF
+    const doc = new jsPDF();
+    doc.text('Relatório de Agendamentos', 10, 10);
+
+    let linha = 20;
+    agendamentosFiltrados.forEach(agendamento => {
+        doc.text(`Funcionário: ${agendamento.funcionarioNome}, Serviço: ${agendamento.servicoNome}, Data: ${agendamento.data}, Valor: ${agendamento.servicoValor.toFixed(2)}`, 10, linha);
+        linha += 10;
+    });
+
+    doc.save('relatorio.pdf');
+}
+
+function calcularRelatorio(dataInicio, dataFim) {
+    // Convert the input strings to Date objects
+    dataInicio = new Date(dataInicio);
+    dataFim = new Date(dataFim);
+    dataFim.setHours(23, 59, 59, 999);  // To include the whole day of the end date
+
+    // Filter appointments within the selected date range
+    const agendamentosPeriodo = agendamentos.filter(agendamento => {
+        const dataAgendamento = new Date(agendamento.data);
+        return dataAgendamento >= dataInicio && dataAgendamento <= dataFim;
+    });
+
+    // Calculate total by employee
+    const totalPorFuncionario = {};
+    agendamentosPeriodo.forEach(agendamento => {
+        const percentualFuncionario = funcionarios.find(f => f.cpf === agendamento.funcionarioCPF).percentual;
+        const valorFuncionario = agendamento.servicoValor * (percentualFuncionario / 100);
+        const valorEmpresa = agendamento.servicoValor - valorFuncionario;
+
+        if (!totalPorFuncionario[agendamento.funcionarioCPF]) {
+            totalPorFuncionario[agendamento.funcionarioCPF] = {
+                nome: agendamento.funcionarioNome,
+                valorFuncionario: 0,
+                valorEmpresa: 0
+            };
+        }
+
+        totalPorFuncionario[agendamento.funcionarioCPF].valorFuncionario += valorFuncionario;
+        totalPorFuncionario[agendamento.funcionarioCPF].valorEmpresa += valorEmpresa;
+    });
+
+    // Generate table result
+    let resultado = `
+        <h3>Relatório de ${dataInicio.toLocaleDateString()} a ${dataFim.toLocaleDateString()}</h3>
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Funcionário</th>
+                    <th>Total a Receber</th>
+                    <th>Total para a Empresa</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    for (let cpf in totalPorFuncionario) {
+        const dados = totalPorFuncionario[cpf];
+        resultado += `
+            <tr>
+                <td>${dados.nome}</td>
+                <td>R$ ${dados.valorFuncionario.toFixed(2)}</td>
+                <td>R$ ${dados.valorEmpresa.toFixed(2)}</td>
+            </tr>
+        `;
+    }
+
+    resultado += `
+            </tbody>
+        </table>
+    `;
+
+    document.getElementById('resultadoRelatorio').innerHTML = resultado;
+}
+
+function gerarRelatorio() {
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+    calcularRelatorio(dataInicio, dataFim);
+}
+
+	
+
+// ------------------ Inicialização ------------------
+
+document.addEventListener('DOMContentLoaded', () => {
+    showSection('cliente'); // Mostrar a seção inicial
+    listarClientes();
+    listarFuncionarios();
+    listarServicos();
+    listarAgendamentos();
+});
+
+
+
+    </script>
+</body>
+</html>
